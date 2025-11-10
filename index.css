@@ -1,0 +1,44 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+*/
+
+/*
+  This file was populated with valid CSS to prevent parsing errors from build tools
+  that might automatically process it.
+*/
+
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #1B1B22; /* gem-onyx */
+  color: #E0E0E0; /* gem-offwhite */
+}
+
+#root {
+  /* Height is now managed by individual components like WelcomeScreen (min-h-screen) 
+     and ChatInterface (h-screen) to allow scrolling on the welcome page 
+     while keeping the chat view fixed. */
+}
+
+/* Custom scrollbar styles for a better look and feel */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #303038; /* gem-slate */
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #4A4A52; /* gem-mist */
+  border-radius: 20px;
+  border: 2px solid #303038; /* gem-slate */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #64B5F6; /* gem-blue */
+}

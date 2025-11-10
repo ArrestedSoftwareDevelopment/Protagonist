@@ -13,6 +13,7 @@ export enum AppStatus {
 export interface StoryTurn {
   role: 'user' | 'model';
   content: string;
+  hidden?: boolean;
 }
 
 export type Playstyle = 'freeform' | 'guided';
@@ -25,6 +26,13 @@ export interface StartChatParams {
   playerRole: PlayerRole;
 }
 
+export interface StartChatResponse {
+  dataSheet: string;
+  chapters: Chapter[];
+  firstSceneContent: string;
+  storyStartPrompt: string;
+}
+
 export interface Chapter {
   title: string;
   summary: string;
@@ -34,6 +42,7 @@ export interface Chapter {
 export interface StoryFramework {
   chapters: Chapter[];
   firstSceneContent: string;
+  dataSheet: string;
 }
 
 export interface Bookmark {
@@ -43,5 +52,13 @@ export interface Bookmark {
   chapters: Chapter[];
   playstyle: Playstyle;
   playerRole: PlayerRole;
+  dataSheet: string;
   lastPlayed: string;
+}
+
+export interface Novel {
+  id: string;
+  title: string;
+  content: string;
+  coverUrl: string;
 }

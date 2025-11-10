@@ -3,12 +3,19 @@
  * SPDX-License-Identifier: Apache-2.0
 */
 import React, { useState, useEffect, useRef } from 'react';
+// Fix: Removed .js extension for module resolution with TypeScript bundler
 import { StoryTurn, Chapter } from '../types';
+// Fix: Removed .js extension for module resolution with TypeScript bundler
 import Spinner from './Spinner';
+// Fix: Removed .js extension for module resolution with TypeScript bundler
 import SendIcon from './icons/SendIcon';
+// Fix: Removed .js extension for module resolution with TypeScript bundler
 import RefreshIcon from './icons/RefreshIcon';
+// Fix: Removed .js extension for module resolution with TypeScript bundler
 import ArrowLeftIcon from './icons/ArrowLeftIcon';
+// Fix: Removed .js extension for module resolution with TypeScript bundler
 import ArrowRightIcon from './icons/ArrowRightIcon';
+// Fix: Removed .js extension for module resolution with TypeScript bundler
 import BookmarkIcon from './icons/BookmarkIcon';
 
 interface ChatInterfaceProps {
@@ -79,7 +86,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     const baseNavClass = "p-2 rounded-full text-gem-offwhite hover:bg-gem-slate disabled:text-gem-mist/50 disabled:bg-transparent disabled:cursor-not-allowed transition-colors";
 
     return (
-        <div className="flex flex-col h-full relative font-serif">
+        <div className="flex flex-col h-screen relative font-serif">
             <header className="absolute top-0 left-0 right-0 p-4 bg-gem-onyx/80 backdrop-blur-sm z-10 flex justify-between items-center border-b border-gem-mist">
                 <div className="w-full max-w-4xl mx-auto flex justify-between items-center px-4">
                     <div className="flex items-center gap-2 flex-shrink-0">
@@ -140,7 +147,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
             <div className="flex-grow pt-24 pb-32 overflow-y-auto px-4">
                 <div className="w-full max-w-4xl mx-auto space-y-6">
-                    {history.map((turn, index) => (
+                    {history.filter(turn => !turn.hidden).map((turn, index) => (
                         <div key={index}>
                             {turn.role === 'model' ? (
                                 <div className="text-gem-offwhite/90 leading-relaxed text-lg space-y-4" dangerouslySetInnerHTML={renderNarrative(turn.content)} />

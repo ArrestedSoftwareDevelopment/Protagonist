@@ -4,11 +4,17 @@
 */
 
 import React, { useState, useEffect } from 'react';
-import { AppStatus, StoryTurn, StartChatParams, StoryFramework, Bookmark, Chapter, PlayerRole, Playstyle } from './types';
+// Fix: Removed .js extension for module resolution with TypeScript bundler
+import { AppStatus, StoryTurn, StartChatParams, StoryFramework, Bookmark, Chapter, PlayerRole, Playstyle, StartChatResponse } from './types';
+// Fix: Removed .js extension for module resolution with TypeScript bundler
 import * as geminiService from './services/geminiService';
+// Fix: Removed .js extension for module resolution with TypeScript bundler
 import * as cacheService from './services/cacheService';
+// Fix: Removed .js extension for module resolution with TypeScript bundler
 import Spinner from './components/Spinner';
+// Fix: Removed .js extension for module resolution with TypeScript bundler
 import WelcomeScreen from './components/WelcomeScreen';
+// Fix: Removed .js extension for module resolution with TypeScript bundler
 import ChatInterface from './components/ChatInterface';
 
 const App: React.FC = () => {
@@ -23,6 +29,7 @@ const App: React.FC = () => {
     const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
     const [playerRole, setPlayerRole] = useState<PlayerRole>('protagonist');
     const [playstyle, setPlaystyle] = useState<Playstyle>('freeform');
+    const [dataSheet, setDataSheet] = useState<string>('');
 
     useEffect(() => {
         setBookmarks(cacheService.getBookmarks());
@@ -58,7 +65,12 @@ const App: React.FC = () => {
             const cachedFramework = cacheService.getStoryFramework(params.novelTitle);
             if (cachedFramework) {
                 setChapters(cachedFramework.chapters);
-                setStoryHistory([{ role: 'model', content: cachedFramework.firstSceneContent }]);
+                // Note: Loading from cache doesn't have the same robust history as a new game.
+                // This is a limitation for now. A better approach would be to cache the full initial history.
+                const initialHistory: StoryTurn[] = [{ role: 'model', content: cachedFramework.firstSceneContent }];
+                setStoryHistory(initialHistory);
+                setDataSheet(cachedFramework.dataSheet);
+                geminiService.recreateChat(initialHistory, params.playerRole, params.playstyle, cachedFramework.dataSheet);
                 setCurrentScene(1);
                 setStatus(AppStatus.Story);
                 return;
@@ -72,35 +84,22 @@ const App: React.FC = () => {
         try {
             geminiService.initialize();
             
-            const response = await geminiService.startChat(params);
-            const responseText = response.text;
+            const { dataSheet, chapters, firstSceneContent, storyStartPrompt }: StartChatResponse = await geminiService.startChat(params);
             
-            const chapterJsonMatch = responseText.match(/```json\n([\s\S]*?)\n```/);
-
-            if (chapterJsonMatch && chapterJsonMatch[1]) {
-                const chapterJson = chapterJsonMatch[1];
-                try {
-                    const parsedChapters = JSON.parse(chapterJson) as Chapter[];
-                    setChapters(parsedChapters);
-                    
-                    const firstSceneText = responseText.substring(chapterJsonMatch[0].length).trim();
-                    setStoryHistory([{ role: 'model', content: firstSceneText }]);
-
-                    if (params.novelTitle && !params.novelContent) {
-                        const newFramework: StoryFramework = {
-                            chapters: parsedChapters,
-                            firstSceneContent: firstSceneText
-                        };
-                        cacheService.setStoryFramework(params.novelTitle, newFramework);
-                    }
-                } catch(e) {
-                     console.error("Failed to parse chapter JSON:", e);
-                     setChapters([]);
-                     setStoryHistory([{ role: 'model', content: responseText }]);
-                }
-            } else {
-                 setChapters([]);
-                 setStoryHistory([{ role: 'model', content: responseText }]);
+            setChapters(chapters);
+            setDataSheet(dataSheet);
+            setStoryHistory([
+                { role: 'user', content: storyStartPrompt, hidden: true },
+                { role: 'model', content: firstSceneContent }
+            ]);
+            
+            if (params.novelTitle && !params.novelContent) {
+                const newFramework: StoryFramework = {
+                    chapters,
+                    firstSceneContent,
+                    dataSheet,
+                };
+                cacheService.setStoryFramework(params.novelTitle, newFramework);
             }
 
             setCurrentScene(1);
@@ -115,13 +114,10 @@ const App: React.FC = () => {
     const handleSendMessage = async (message: string) => {
         if (!isQueryLoading) {
             setIsQueryLoading(true);
-            // Fix for line 119: Use a functional update for setStoryHistory.
-            // This allows TypeScript to correctly infer the type of the new history item
-            // from the `prev` state, and it also prevents potential race conditions.
-            setStoryHistory(prev => [...prev, { role: 'user', content: message }]);
+            const newHistory: StoryTurn[] = [...storyHistory, { role: 'user', content: message }];
+            setStoryHistory(newHistory);
 
             try {
-                // FIX: Removed extra arguments from sendMessage call.
                 const response = await geminiService.sendMessage(message);
                 setStoryHistory(prev => [...prev, { role: 'model', content: response.text }]);
             } catch (err) {
@@ -138,6 +134,7 @@ const App: React.FC = () => {
         setChapters([]);
         setCurrentScene(1);
         setNovelTitle('');
+        setDataSheet('');
         setError(null);
     };
 
@@ -162,7 +159,6 @@ const App: React.FC = () => {
         
         try {
             const chapterTitle = chapters[chapterIndex].title;
-            // FIX: Removed extra arguments from changeScene call.
             const response = await geminiService.changeScene(sceneNumber, chapterTitle);
             setStoryHistory(prev => [...prev, { role: 'model', content: response.text }]);
             setCurrentScene(sceneNumber);
@@ -182,6 +178,7 @@ const App: React.FC = () => {
                 chapters,
                 playerRole,
                 playstyle,
+                dataSheet,
                 lastPlayed: new Date().toISOString()
             };
             cacheService.saveBookmark(bookmark);
@@ -198,6 +195,8 @@ const App: React.FC = () => {
         setChapters(bookmark.chapters);
         setPlayerRole(bookmark.playerRole);
         setPlaystyle(bookmark.playstyle);
+        setDataSheet(bookmark.dataSheet);
+        geminiService.recreateChat(bookmark.storyHistory, bookmark.playerRole, bookmark.playstyle, bookmark.dataSheet);
         setStatus(AppStatus.Story);
     };
     
