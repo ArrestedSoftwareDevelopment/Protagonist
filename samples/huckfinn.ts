@@ -2,7 +2,24 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
 */
+import { NovelDataSheet } from '../types';
 
-export const huckFinnText = `CHAPTER I.
+export const huckfinn = {
+  path: './MasterTextFiles/HuckFinnMaster.txt',
+  notes: `Novel-specific notes for Adventures of Huckleberry Finn can be added here.`,
+  stub: `CHAPTER I.
 
-YOU don't know about me without you have read a book by the name of The Adventures of Tom Sawyer; but that ain't no matter. That book was made by Mr. Mark Twain, and he told the truth, mainly. There was things which he stretched, but mainly he told the truth. That is nothing. I never seen anybody but lied one time or another, without it was Aunt Polly, or the widow, or maybe Mary. Aunt Polly—Tom's Aunt Polly, she is—and Mary, and the Widow Douglas is all told about in that book, which is mostly a true book, with some stretchers, as I said before.`;
+YOU don't know about me without you have read a book by the name of The Adventures of Tom Sawyer; but that ain't no matter. That book was made by Mr. Mark Twain, and he told the truth, mainly. There was things which he stretched, but mainly he told the truth. That is nothing. I never seen anybody but lied one time or another, without it was Aunt Polly, or the widow, or maybe Mary. Aunt Polly—Tom's Aunt Polly, she is—and Mary, and the Widow Douglas is all told about in that book, which is mostly a true book, with some stretchers, as I said before.`,
+  datasheet: {
+    characters: [],
+    plotpoints: [],
+    moods_styles_tones: {
+      overall_mood: '',
+      writing_style: '',
+      pacing: '',
+      themes: [],
+    },
+    roadmap: [],
+    custom_instances: [],
+  } as NovelDataSheet,
+};

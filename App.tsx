@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 // Fix: Removed .js extension for module resolution with TypeScript bundler
-import { AppStatus, StoryTurn, StartChatParams, StoryFramework, Bookmark, Chapter, PlayerRole, Playstyle, StartChatResponse } from './types';
+import { AppStatus, StoryTurn, StartChatParams, StoryFramework, Bookmark, Chapter, PlayerRole, Playstyle, StartChatResponse, NovelDataSheet } from './types';
 // Fix: Removed .js extension for module resolution with TypeScript bundler
 import * as geminiService from './services/geminiService';
 // Fix: Removed .js extension for module resolution with TypeScript bundler
@@ -29,7 +29,8 @@ const App: React.FC = () => {
     const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
     const [playerRole, setPlayerRole] = useState<PlayerRole>('protagonist');
     const [playstyle, setPlaystyle] = useState<Playstyle>('freeform');
-    const [dataSheet, setDataSheet] = useState<string>('');
+    const [dataSheet, setDataSheet] = useState<NovelDataSheet | null>(null);
+    const [protagonistName, setProtagonistName] = useState<string>('');
 
     useEffect(() => {
         setBookmarks(cacheService.getBookmarks());
@@ -54,37 +55,49 @@ const App: React.FC = () => {
     const clearError = () => {
         setError(null);
         handleNewStory();
-    }
+    };
 
     const handleStartChat = async (params: StartChatParams) => {
         setNovelTitle(params.novelTitle || 'Untitled Story');
         setPlayerRole(params.playerRole);
         setPlaystyle(params.playstyle);
+        setProtagonistName(params.protagonistName || '');
 
-        if (params.novelTitle && !params.novelContent) {
+        // Check for cached framework for both sample and custom-titled novels
+        if (params.novelTitle) {
             const cachedFramework = cacheService.getStoryFramework(params.novelTitle);
-            if (cachedFramework) {
+            if (cachedFramework && (params.novelPath || !params.novelContent)) {
                 setChapters(cachedFramework.chapters);
-                // Note: Loading from cache doesn't have the same robust history as a new game.
-                // This is a limitation for now. A better approach would be to cache the full initial history.
                 const initialHistory: StoryTurn[] = [{ role: 'model', content: cachedFramework.firstSceneContent }];
                 setStoryHistory(initialHistory);
                 setDataSheet(cachedFramework.dataSheet);
-                geminiService.recreateChat(initialHistory, params.playerRole, params.playstyle, cachedFramework.dataSheet);
+                geminiService.recreateChat(initialHistory, params.playerRole, params.playstyle, cachedFramework.dataSheet, params.protagonistName);
                 setCurrentScene(1);
                 setStatus(AppStatus.Story);
                 return;
             }
         }
-
-        setProcessingMessage(params.novelContent ? "The storyteller is reading the novel..." : "The storyteller is preparing the scene...");
+        
         setStatus(AppStatus.Processing);
         setIsQueryLoading(true);
 
         try {
+            let fullNovelContent: string | undefined = undefined;
+            
+            if (params.novelPath) {
+                setProcessingMessage("The storyteller is fetching the novel...");
+                const response = await fetch(params.novelPath);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch novel from ${params.novelPath}: ${response.statusText}`);
+                }
+                fullNovelContent = await response.text();
+            }
+
+            setProcessingMessage(params.novelContent || fullNovelContent ? "The storyteller is reading the novel..." : "The storyteller is preparing the scene...");
+
             geminiService.initialize();
             
-            const { dataSheet, chapters, firstSceneContent, storyStartPrompt }: StartChatResponse = await geminiService.startChat(params);
+            const { dataSheet, chapters, firstSceneContent, storyStartPrompt }: StartChatResponse = await geminiService.startChat(params, fullNovelContent);
             
             setChapters(chapters);
             setDataSheet(dataSheet);
@@ -93,7 +106,8 @@ const App: React.FC = () => {
                 { role: 'model', content: firstSceneContent }
             ]);
             
-            if (params.novelTitle && !params.novelContent) {
+            // Cache the framework for sample novels or custom-titled novels
+            if (params.novelTitle && (params.novelPath || !params.novelContent)) {
                 const newFramework: StoryFramework = {
                     chapters,
                     firstSceneContent,
@@ -134,7 +148,8 @@ const App: React.FC = () => {
         setChapters([]);
         setCurrentScene(1);
         setNovelTitle('');
-        setDataSheet('');
+        setDataSheet(null);
+        setProtagonistName('');
         setError(null);
     };
 
@@ -170,7 +185,7 @@ const App: React.FC = () => {
     };
 
     const handleSaveBookmark = () => {
-        if (novelTitle) {
+        if (novelTitle && dataSheet) {
             const bookmark: Bookmark = {
                 novelTitle,
                 storyHistory,
@@ -179,6 +194,7 @@ const App: React.FC = () => {
                 playerRole,
                 playstyle,
                 dataSheet,
+                protagonistName,
                 lastPlayed: new Date().toISOString()
             };
             cacheService.saveBookmark(bookmark);
@@ -196,7 +212,8 @@ const App: React.FC = () => {
         setPlayerRole(bookmark.playerRole);
         setPlaystyle(bookmark.playstyle);
         setDataSheet(bookmark.dataSheet);
-        geminiService.recreateChat(bookmark.storyHistory, bookmark.playerRole, bookmark.playstyle, bookmark.dataSheet);
+        setProtagonistName(bookmark.protagonistName || '');
+        geminiService.recreateChat(bookmark.storyHistory, bookmark.playerRole, bookmark.playstyle, bookmark.dataSheet, bookmark.protagonistName);
         setStatus(AppStatus.Story);
     };
     

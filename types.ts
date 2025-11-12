@@ -22,12 +22,15 @@ export type PlayerRole = 'protagonist' | 'self';
 export interface StartChatParams {
   novelTitle?: string;
   novelContent?: string;
+  novelPath?: string;
+  notes?: string;
   playstyle: Playstyle;
   playerRole: PlayerRole;
+  protagonistName?: string;
 }
 
 export interface StartChatResponse {
-  dataSheet: string;
+  dataSheet: NovelDataSheet;
   chapters: Chapter[];
   firstSceneContent: string;
   storyStartPrompt: string;
@@ -39,10 +42,48 @@ export interface Chapter {
   characters: string[];
 }
 
+// New granular datasheet structure
+export interface CharacterProfile {
+  name: string;
+  description: string;
+}
+
+export interface PlotPoint {
+  chapter: number | string;
+  event: string;
+  description: string;
+}
+
+export interface MoodStyleTone {
+  overall_mood: string;
+  writing_style: string;
+  pacing: string;
+  themes: string[];
+}
+
+export interface RoadmapStep {
+  chapter_focus: number | string;
+  objective: string;
+  key_plotpoints_to_include: string[];
+}
+
+export interface CustomInstance {
+  trigger: string;
+  handler_instruction: string;
+}
+
+export interface NovelDataSheet {
+  characters: CharacterProfile[];
+  plotpoints: PlotPoint[];
+  moods_styles_tones: MoodStyleTone;
+  roadmap: RoadmapStep[];
+  custom_instances: CustomInstance[];
+}
+
 export interface StoryFramework {
   chapters: Chapter[];
   firstSceneContent: string;
-  dataSheet: string;
+  dataSheet: NovelDataSheet;
 }
 
 export interface Bookmark {
@@ -50,15 +91,9 @@ export interface Bookmark {
   storyHistory: StoryTurn[];
   currentScene: number;
   chapters: Chapter[];
-  playstyle: Playstyle;
   playerRole: PlayerRole;
-  dataSheet: string;
+  playstyle: Playstyle;
+  dataSheet: NovelDataSheet;
   lastPlayed: string;
-}
-
-export interface Novel {
-  id: string;
-  title: string;
-  content: string;
-  coverUrl: string;
+  protagonistName?: string;
 }

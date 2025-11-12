@@ -4,19 +4,38 @@
 */
 
 import React, { useState } from 'react';
-import { StartChatParams, Bookmark, PlayerRole, Playstyle } from '../types';
+// FIX: Add NovelDataSheet to support typing sample novel data.
+import { StartChatParams, Bookmark, PlayerRole, Playstyle, NovelDataSheet } from '../types';
 import TrashIcon from './icons/TrashIcon';
 import UploadCloudIcon from './icons/UploadCloudIcon';
 
 // Sample novel imports
-import { aliceText } from '../samples/alice';
-import { mobyDickText } from '../samples/mobydick';
-import { huckFinnText } from '../samples/huckfinn';
-import { tomSawyerText } from '../samples/tomsawyer';
-import { everythingWentBlackText } from '../samples/everythingwentblack';
-import { radarLoveText } from '../samples/radarlove';
-import { perfectMeText } from '../samples/perfectme';
-import { frankensteinText } from '../samples/frankenstein';
+import { alice } from '../samples/alice';
+import { mobydick } from '../samples/mobydick';
+import { huckfinn } from '../samples/huckfinn';
+import { tomsawyer } from '../samples/tomsawyer';
+import { everythingwentblack } from '../samples/everythingwentblack';
+import { radarlove } from '../samples/radarlove';
+import { perfectme } from '../samples/perfectme';
+import { frankenstein } from '../samples/frankenstein';
+import { hurricaneregina } from '../samples/hurricaneregina';
+import { pageburner } from '../samples/pageburner';
+import { penultimatehustlejapan } from '../samples/penultimatehustlejapan';
+import { zombiekilla } from '../samples/zombiekilla';
+import { dracula } from '../samples/dracula';
+import { doriangray } from '../samples/doriangray';
+import { princessofmars } from '../samples/princessofmars';
+import { prideprejudice } from '../samples/prideprejudice';
+import { sherlock } from '../samples/sherlock';
+import { timemachine } from '../samples/timemachine';
+import { callofthewild } from '../samples/callofthewild';
+import { gatsby } from '../samples/gatsby';
+import { jekyllhyde } from '../samples/jekyllhyde';
+import { ruemorgue } from '../samples/ruemorgue';
+import { twocities } from '../samples/twocities';
+import { treasureisland } from '../samples/treasureisland';
+import { waroftheworlds } from '../samples/waroftheworlds';
+import { yellowwallpaper } from '../samples/yellowwallpaper';
 
 
 interface WelcomeScreenProps {
@@ -26,24 +45,59 @@ interface WelcomeScreenProps {
     onDeleteBookmark: (title: string) => void;
 }
 
-const sampleNovels = [
-    { title: "Alice's Adventures in Wonderland", content: aliceText, color: 'bg-sky-500' },
-    { title: "Moby Dick", content: mobyDickText, color: 'bg-indigo-800' },
-    { title: "Adventures of Huckleberry Finn", content: huckFinnText, color: 'bg-amber-800' },
-    { title: "The Adventures of Tom Sawyer", content: tomSawyerText, color: 'bg-red-700' },
-    { title: "Everything Went Black", content: everythingWentBlackText, color: 'bg-zinc-900' },
-    { title: "Radar Love", content: radarLoveText, color: 'bg-orange-500' },
-    { title: "Perfect Me", content: perfectMeText, color: 'bg-cyan-500' },
-    { title: "Frankenstein", content: frankensteinText, color: 'bg-slate-600' },
+// FIX: Define interfaces for sample novel data to make `protagonists` an optional property, resolving type errors.
+interface SampleNovelData {
+    path: string;
+    notes: string;
+    stub: string;
+    datasheet: NovelDataSheet;
+    protagonists?: string[];
+}
+
+interface SampleNovel {
+    title: string;
+    data: SampleNovelData;
+    color: string;
+}
+
+const sampleNovels: SampleNovel[] = [
+    { title: "Everything Went Black", data: everythingwentblack, color: 'bg-zinc-900' },
+    { title: "Radar Love", data: radarlove, color: 'bg-orange-500' },
+    { title: "Perfect Me", data: perfectme, color: 'bg-cyan-500' },
+    { title: "Hurricane Regina", data: hurricaneregina, color: 'bg-teal-600' },
+    { title: "Pageburner", data: pageburner, color: 'bg-rose-700' },
+    { title: "Penultimate Hustle: Japan", data: penultimatehustlejapan, color: 'bg-fuchsia-800' },
+    { title: "Zombie Killa", data: zombiekilla, color: 'bg-lime-600' },
+    { title: "Alice's Adventures in Wonderland", data: alice, color: 'bg-sky-500' },
+    { title: "Moby Dick", data: mobydick, color: 'bg-indigo-800' },
+    { title: "Adventures of Huckleberry Finn", data: huckfinn, color: 'bg-amber-800' },
+    { title: "The Adventures of Tom Sawyer", data: tomsawyer, color: 'bg-red-700' },
+    { title: "Frankenstein", data: frankenstein, color: 'bg-slate-600' },
+    { title: "Dracula", data: dracula, color: 'bg-red-900' },
+    { title: "The Picture of Dorian Gray", data: doriangray, color: 'bg-purple-900' },
+    { title: "A Princess of Mars", data: princessofmars, color: 'bg-orange-900' },
+    { title: "Pride and Prejudice", data: prideprejudice, color: 'bg-pink-800' },
+    { title: "The Adventures of Sherlock Holmes", data: sherlock, color: 'bg-stone-700' },
+    { title: "The Time Machine", data: timemachine, color: 'bg-cyan-800' },
+    { title: "The Call of the Wild", data: callofthewild, color: 'bg-yellow-800' },
+    { title: "The Great Gatsby", data: gatsby, color: 'bg-emerald-700' },
+    { title: "Jekyll & Hyde", data: jekyllhyde, color: 'bg-violet-900' },
+    { title: "The Murders in the Rue Morgue", data: ruemorgue, color: 'bg-gray-800' },
+    { title: "A Tale of Two Cities", data: twocities, color: 'bg-rose-900' },
+    { title: "Treasure Island", data: treasureisland, color: 'bg-lime-800' },
+    { title: "The War of the Worlds", data: waroftheworlds, color: 'bg-red-800' },
+    { title: "The Yellow Wallpaper", data: yellowwallpaper, color: 'bg-yellow-600' },
 ];
 
 
 const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartChat, bookmarks, onLoadBookmark, onDeleteBookmark }) => {
     const [novelTitle, setNovelTitle] = useState('');
     const [novelContent, setNovelContent] = useState('');
+    const [novelPath, setNovelPath] = useState('');
     const [playstyle, setPlaystyle] = useState<Playstyle>('freeform');
     const [playerRole, setPlayerRole] = useState<PlayerRole>('protagonist');
     const [selectedNovel, setSelectedNovel] = useState('custom');
+    const [selectedProtagonist, setSelectedProtagonist] = useState<string>('');
     const [activeTab, setActiveTab] = useState('new');
 
     const handleSelectNovel = (value: string) => {
@@ -51,11 +105,19 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartChat, bookmarks, o
         if (value === 'custom') {
             setNovelTitle('');
             setNovelContent('');
+            setNovelPath('');
+            setSelectedProtagonist('');
         } else {
             const novel = sampleNovels.find(n => n.title === value);
             if (novel) {
                 setNovelTitle(novel.title);
-                setNovelContent(novel.content);
+                setNovelContent(novel.data.stub);
+                setNovelPath(novel.data.path);
+                if (novel.data.protagonists && novel.data.protagonists.length > 0) {
+                    setSelectedProtagonist(novel.data.protagonists[0]);
+                } else {
+                    setSelectedProtagonist('');
+                }
             }
         }
     };
@@ -75,6 +137,8 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartChat, bookmarks, o
         }
     };
 
+    const currentNovelData = sampleNovels.find(n => n.title === selectedNovel)?.data;
+
     const handleStart = () => {
         if (selectedNovel === 'custom' && !novelTitle.trim()) {
             alert('Please provide a title for your custom novel.');
@@ -84,8 +148,11 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartChat, bookmarks, o
         const params: StartChatParams = {
             novelTitle,
             novelContent,
+            novelPath: selectedNovel === 'custom' ? undefined : novelPath,
+            notes: selectedNovel === 'custom' ? undefined : currentNovelData?.notes,
             playstyle,
-            playerRole
+            playerRole,
+            protagonistName: playerRole === 'protagonist' ? selectedProtagonist : undefined
         };
         onStartChat(params);
     };
@@ -204,6 +271,21 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartChat, bookmarks, o
                                     </div>
                                 </fieldset>
                             </div>
+                            
+                            {selectedNovel !== 'custom' && playerRole === 'protagonist' && currentNovelData?.protagonists && currentNovelData.protagonists.length > 0 && (
+                                <fieldset>
+                                    <legend className="block text-lg font-semibold mb-2">Choose Your Protagonist</legend>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                        {currentNovelData.protagonists.map((name: string) => (
+                                            <label key={name} className={radioLabelClass(selectedProtagonist === name)}>
+                                                <input type="radio" name="protagonistName" value={name} checked={selectedProtagonist === name} onChange={() => setSelectedProtagonist(name)} className="sr-only"/>
+                                                <h4 className="font-bold text-gem-offwhite text-center">{name}</h4>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </fieldset>
+                            )}
+
 
                             <button onClick={handleStart} className="w-full text-center px-8 py-4 bg-gem-blue hover:bg-sky-400 text-gem-onyx font-bold text-xl rounded-full transition-colors shadow-lg">
                                 Start Your Adventure
