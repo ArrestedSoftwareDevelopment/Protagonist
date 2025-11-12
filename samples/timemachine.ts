@@ -2,9 +2,10 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
 */
-import { NovelDataSheet } from '../types';
+// Fix: Add explicit type annotation to fix type inference issue.
+import { NovelDataSheet, SampleNovelData } from '../types';
 
-export const timemachine = {
+export const timemachine: SampleNovelData = {
   path: './MasterTextFiles/TimeMachineMaster.txt',
   notes: `Novel-specific notes for The Time Machine can be added here.`,
   stub: `This is a placeholder for The Time Machine.`,
@@ -20,4 +21,6 @@ export const timemachine = {
     roadmap: [],
     custom_instances: [],
   } as NovelDataSheet,
+  source: 'pd',
+  genre: 'Science Fiction',
 };

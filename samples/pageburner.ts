@@ -2,9 +2,10 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
 */
-import { NovelDataSheet } from '../types';
+// Fix: Add explicit type annotation to fix type inference issue.
+import { NovelDataSheet, SampleNovelData } from '../types';
 
-export const pageburner = {
+export const pageburner: SampleNovelData = {
   path: './MasterTextFiles/PageburnerMaster.txt',
   notes: `Novel-specific notes for Pageburner can be added here.`,
   protagonists: ['Detective Paige Burner', 'Dr. Jean Simons'],
@@ -28,4 +29,5 @@ Chapter 1 - A Fishy Tale
     roadmap: [],
     custom_instances: [],
   } as NovelDataSheet,
+  source: 'jzc',
 };

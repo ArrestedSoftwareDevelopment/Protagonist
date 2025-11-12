@@ -2,11 +2,13 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
 */
-import { NovelDataSheet } from '../types';
+// Fix: Add explicit type annotation to fix type inference issue.
+import { NovelDataSheet, SampleNovelData } from '../types';
 
-export const zombiekilla = {
+export const zombiekilla: SampleNovelData = {
   path: './MasterTextFiles/ZombieKillaMaster.txt',
   notes: `Novel-specific notes for Zombie Killa can be added here.`,
+  protagonists: ['High-C', 'Myf'],
   stub: `A nerdcore hip-hop novella
 
 Chapter 1 - The Odd Couple
@@ -23,4 +25,5 @@ Chapter 1 - The Odd Couple
     roadmap: [],
     custom_instances: [],
   } as NovelDataSheet,
+  source: 'jzc',
 };

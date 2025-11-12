@@ -2,9 +2,10 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
 */
-import { NovelDataSheet } from '../types';
+// Fix: Add explicit type annotation to fix type inference issue.
+import { NovelDataSheet, SampleNovelData } from '../types';
 
-export const treasureisland = {
+export const treasureisland: SampleNovelData = {
   path: './MasterTextFiles/TreasureIslandMaster.txt',
   notes: `Novel-specific notes for Treasure Island can be added here.`,
   stub: `This is a placeholder for Treasure Island.`,
@@ -20,4 +21,6 @@ export const treasureisland = {
     roadmap: [],
     custom_instances: [],
   } as NovelDataSheet,
+  source: 'pd',
+  genre: 'Adventure',
 };

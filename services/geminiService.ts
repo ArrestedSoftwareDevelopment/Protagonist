@@ -3,20 +3,17 @@
  * SPDX-License-Identifier: Apache-2.0
 */
 
-// FIX: Import from @google/genai
-import { GoogleGenAI, GenerateContentResponse, Chat, Content } from "@google/genai";
-// FIX: Import from ../types
-import { StartChatParams, StoryTurn, PlayerRole, Playstyle, Chapter, StartChatResponse, NovelDataSheet } from '../types';
+import { GoogleGenAI, GenerateContentResponse, Chat, Content, Type } from "@google/genai";
+import { StartChatParams, StoryTurn, PlayerRole, Playstyle, Chapter, StartChatResponse, NovelDataSheet, ChapterGameplayPlan } from '../types';
 import { Portals } from '../universe/portals';
 import { basicRulesetDoc } from '../BasicRuleset';
 
 
 let ai: GoogleGenAI;
 let chat: Chat;
+let currentNovelTitle: string;
 
 export function initialize() {
-    // FIX: Initialize with apiKey from environment variable.
-    // The API key MUST be obtained exclusively from the environment variable `process.env.API_KEY`.
     ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
 }
 
@@ -40,242 +37,263 @@ function getSystemInstruction(playerRole: PlayerRole, playstyle: Playstyle, prot
         const characterProfiles = dataSheet.characters.map(c => `- ${c.name}: ${c.description}`).join('\n');
         const plotPoints = dataSheet.plotpoints.map(p => `- Chapter ${p.chapter} (${p.event}): ${p.description}`).join('\n');
         const roadmap = dataSheet.roadmap.map(r => `- Focus on Chapter ${r.chapter_focus}: ${r.objective}`).join('\n');
-        const customInstances = dataSheet.custom_instances.map(i => `- On trigger '${i.trigger}', follow this rule: ${i.handler_instruction}`).join('\n');
+        const moods = dataSheet.moods_styles_tones;
+        const custom_instances = dataSheet.custom_instances.map(i => `- On trigger "${i.trigger}", follow this instruction: "${i.handler_instruction}"`).join('\n');
 
-        dataSheetInstruction = `You MUST strictly adhere to the following established story context, which is your permanent map for this narrative:
-<story_bible>
-  <mood_style_tone>
-    - Mood: ${dataSheet.moods_styles_tones.overall_mood}
-    - Style: ${dataSheet.moods_styles_tones.writing_style}
-    - Pacing: ${dataSheet.moods_styles_tones.pacing}
-    - Themes: ${dataSheet.moods_styles_tones.themes.join(', ')}
-  </mood_style_tone>
-  <characters>
-    ${characterProfiles}
-  </characters>
-  <plot_points>
-    ${plotPoints}
-  </plot_points>
-  <roadmap>
-    ${roadmap}
-  </roadmap>
-  <custom_instances>
-    ${customInstances}
-  </custom_instances>
-</story_bible>
+        dataSheetInstruction = `
+<novel_datasheet>
+- **Characters**:
+${characterProfiles}
+- **Plot Points**:
+${plotPoints}
+- **Moods, Styles, Tones**:
+  - Overall Mood: ${moods.overall_mood}
+  - Writing Style: ${moods.writing_style}
+  - Pacing: ${moods.pacing}
+  - Themes: ${moods.themes.join(', ')}
+- **Roadmap**:
+${roadmap}
+- **Custom Instances**:
+${custom_instances}
+</novel_datasheet>
 `;
     }
 
-    return `You are an expert storyteller and collaborative fiction author. Your goal is to create an immersive, interactive experience for the user within the world of a novel.
-${rulesetInstruction}
-${dataSheetInstruction}
+    return `${rulesetInstruction}\n\n<role_and_playstyle>
 ${roleInstruction}
 ${playstyleInstruction}
-- Be descriptive and engaging.
-- Write in a literary style.
-- Crucially, if a story bible is provided, you must adhere to its context (mood, style, characters, plot). Maintain this consistency throughout the entire narrative.
-- Keep your responses to a few paragraphs, focusing on the immediate scene and characters.
-- Do not break the fourth wall or refer to yourself as an AI.
-- You are the narrator.`;
+</role_and_playstyle>\n\n${dataSheetInstruction}`;
+}
+
+function serializeGameplayPlan(plan: ChapterGameplayPlan): string {
+    const beats = plan.beats.map(b => `- Beat ${b.beat}: ${b.description}\n  - Objective: ${b.objective}`).join('\n');
+    return `
+<chapter_gameplay_plan>
+Follow this detailed plan to guide the player through the current chapter:
+${beats}
+</chapter_gameplay_plan>
+`;
 }
 
 export async function startChat(params: StartChatParams, fullNovelContent?: string): Promise<StartChatResponse> {
-    if (!ai) {
-        throw new Error("Gemini AI not initialized.");
-    }
-
     let dataSheet: NovelDataSheet | undefined;
-    let chapters: Chapter[] = [];
-    const analysisModel = 'gemini-2.5-pro';
+    let chapters: Chapter[] | undefined;
+    
+    currentNovelTitle = params.novelTitle || '';
+    
+    // For JZC novels, we use the pre-defined, canonical datasheets and chapters
+    if (params.novelTitle && Portals.getNovelDataSheet(params.novelTitle)) {
+        dataSheet = Portals.getNovelDataSheet(params.novelTitle);
+        chapters = Portals.getNovelChapters(params.novelTitle);
+    }
+    
+    // For Public Domain / Custom novels, generate the framework with Gemini
+    if (!dataSheet || !chapters) {
+        if (!fullNovelContent && !params.novelContent) {
+            throw new Error('Novel content is required to start a story without a pre-defined datasheet.');
+        }
 
-    const preloadedDataSheet = Portals.getNovelDataSheet(params.novelTitle || '');
-    const preloadedChapters = Portals.getNovelChapters(params.novelTitle || '');
+        const novelTextForAnalysis = fullNovelContent || params.novelContent;
+        const analysisPromptParts = [
+            "You are a literary analysis expert. Your task is to read the provided novel text and generate a structured JSON object containing a detailed datasheet and a complete chapter-by-chapter outline. Adhere strictly to the provided JSON schema.",
+            "IMPORTANT: In the generated JSON, all chapter numbers (like in `plotpoints.chapter` and `roadmap.chapter_focus`) MUST be represented as strings, not numbers. For example: \"chapter\": \"1\" instead of \"chapter\": 1.",
+            `Novel Title: ${params.novelTitle || 'Untitled'}`,
+            `Novel Text: """${novelTextForAnalysis}"""`,
+            "Generate the JSON object now."
+        ];
 
-    if (preloadedDataSheet) {
-        dataSheet = preloadedDataSheet;
-        // Use pre-defined chapters if they exist, otherwise generate them.
-        if (preloadedChapters) {
-            chapters = preloadedChapters;
-        } else {
-            // Fallback to generating chapters if they aren't pre-defined for a JZC novel
-            const chapterGenPrompt = `Based on the provided NovelDataSheet for "${params.novelTitle}", generate a COMPLETE chapter list for the novel. Each chapter in the list must correspond directly to the major plotpoints outlined in the datasheet's 'plotpoints' and 'roadmap' sections. Do NOT invent new plot points or titles.
+        const isMashup = params.novelPaths && params.novelPaths.length > 1;
+        if (isMashup) {
+            analysisPromptParts.unshift('This is a "mash-up" of multiple novels. You must synthesize them into a single, coherent story framework based on the mash-up rules provided in the Basic Ruleset.');
+        }
 
-    Your output must be a single JSON array, enclosed in a \`\`\`json code block. Each object in the array must represent a chapter and have the following properties:
-    - "title": A concise title for the chapter, derived DIRECTLY from the 'event' field in the plotpoints.
-    - "summary": A brief summary of the chapter's events, based on the plot point description.
-    - "characters": An array of the key characters involved in that chapter.
+        const analysisPrompt = analysisPromptParts.join('\n\n');
 
-    NovelDataSheet:
-    <datasheet>
-    ${JSON.stringify(dataSheet, null, 2)}
-    </datasheet>
-    `;
-            const analysisResponse = await ai.models.generateContent({
-                model: analysisModel,
-                contents: chapterGenPrompt,
-            });
-            const analysisText = analysisResponse.text;
-            const chapterJsonMatch = analysisText.match(/```json\n([\s\S]*?)\n```/);
-            if (chapterJsonMatch && chapterJsonMatch[1]) {
-                try {
-                    chapters = JSON.parse(chapterJsonMatch[1]) as Chapter[];
-                } catch (e) {
-                    console.error("Failed to parse chapter JSON for universe novel:", e);
-                    chapters = []; // Ensure chapters is an empty array on failure
+        const response: GenerateContentResponse = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: analysisPrompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        dataSheet: {
+                            type: Type.OBJECT,
+                            properties: {
+                                characters: {
+                                    type: Type.ARRAY,
+                                    items: {
+                                        type: Type.OBJECT,
+                                        properties: {
+                                            name: { type: Type.STRING },
+                                            description: { type: Type.STRING }
+                                        },
+                                        required: ['name', 'description']
+                                    }
+                                },
+                                plotpoints: {
+                                    type: Type.ARRAY,
+                                    items: {
+                                        type: Type.OBJECT,
+                                        properties: {
+                                            chapter: { type: Type.STRING },
+                                            event: { type: Type.STRING },
+                                            description: { type: Type.STRING }
+                                        },
+                                         required: ['chapter', 'event', 'description']
+                                    }
+                                },
+                                moods_styles_tones: {
+                                    type: Type.OBJECT,
+                                    properties: {
+                                        overall_mood: { type: Type.STRING },
+                                        writing_style: { type: Type.STRING },
+                                        pacing: { type: Type.STRING },
+                                        themes: { type: Type.ARRAY, items: { type: Type.STRING } }
+                                    },
+                                    required: ['overall_mood', 'writing_style', 'pacing', 'themes']
+                                },
+                                roadmap: {
+                                    type: Type.ARRAY,
+                                    items: {
+                                        type: Type.OBJECT,
+                                        properties: {
+                                            chapter_focus: { type: Type.STRING },
+                                            objective: { type: Type.STRING },
+                                            key_plotpoints_to_include: { type: Type.ARRAY, items: { type: Type.STRING } }
+                                        },
+                                        required: ['chapter_focus', 'objective', 'key_plotpoints_to_include']
+                                    }
+                                },
+                                custom_instances: {
+                                    type: Type.ARRAY,
+                                    items: {
+                                        type: Type.OBJECT,
+                                        properties: {
+                                            trigger: { type: Type.STRING },
+                                            handler_instruction: { type: Type.STRING }
+                                        },
+                                        required: ['trigger', 'handler_instruction']
+                                    }
+                                }
+                            },
+                             required: ['characters', 'plotpoints', 'moods_styles_tones', 'roadmap', 'custom_instances']
+                        },
+                        chapters: {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    title: { type: Type.STRING },
+                                    summary: { type: Type.STRING },
+                                    characters: { type: Type.ARRAY, items: { type: Type.STRING } }
+                                },
+                                required: ['title', 'summary', 'characters']
+                            }
+                        }
+                    },
+                    required: ['dataSheet', 'chapters']
                 }
             }
-        }
-    } else {
-        const analysisContent = fullNovelContent || params.novelContent;
-        const analysisLabel = fullNovelContent ? 'novel' : 'excerpt';
-        let setupPrompt = '';
-        if (analysisContent) {
-            setupPrompt = `Analyze the following ${analysisLabel} titled "${params.novelTitle}". Your task is to produce two JSON objects: a detailed "NovelDataSheet" and a chapter outline.
-
-First, create the NovelDataSheet JSON object. It will be your permanent map for a story based on this ${analysisLabel}. It MUST conform to this structure:
-{
-  "characters": [{ "name": string, "description": string }],
-  "plotpoints": [{ "chapter": string | number, "event": string, "description": string }],
-  "moods_styles_tones": { "overall_mood": string, "writing_style": string, "pacing": string, "themes": string[] },
-  "roadmap": [{ "chapter_focus": string | number, "objective": string, "key_plotpoints_to_include": string[] }],
-  "custom_instances": [{ "trigger": string, "handler_instruction": string }]
-}
-Enclose this NovelDataSheet JSON in a single \`\`\`json code block.
-
-Second, after the NovelDataSheet block, create a separate JSON object that outlines the full list of chapters for the story, based on the plotpoints. Each chapter object in this JSON array should have "title", "summary", and "characters". Enclose this chapter JSON in a second, separate \`\`\`json code block.
-
-${analysisLabel}:
-<${analysisLabel}>
-${analysisContent}
-</${analysisLabel}>
-`;
-        } else {
-             setupPrompt = `I want to start a new interactive story titled "${params.novelTitle}". I haven't provided an excerpt, so you can create the world from scratch.
-
-First, create a "NovelDataSheet" JSON object for your reference. This will be your permanent map for our entire story. It MUST conform to this structure:
-{
-  "characters": [{ "name": string, "description": string }],
-  "plotpoints": [{ "chapter": string | number, "event": string, "description": string }],
-  "moods_styles_tones": { "overall_mood": string, "writing_style": string, "pacing": string, "themes": string[] },
-  "roadmap": [{ "chapter_focus": string | number, "objective": string, "key_plotpoints_to_include": string[] }],
-  "custom_instances": [{ "trigger": string, "handler_instruction": string }]
-}
-Enclose this NovelDataSheet JSON in a single \`\`\`json code block.
-
-Second, after the NovelDataSheet block, create a separate JSON object that outlines the first 5-7 chapters of a potential story arc. Each chapter object should have a "title", "summary", and "characters". Enclose this chapter JSON in a second, separate \`\`\`json code block.`;
-        }
-        
-        const analysisResponse = await ai.models.generateContent({
-            model: analysisModel,
-            contents: setupPrompt,
         });
-        const analysisText = analysisResponse.text;
         
-        const jsonMatches = analysisText.match(/```json\n([\s\S]*?)\n```/g);
-        if (jsonMatches && jsonMatches.length > 0) {
-            try {
-                dataSheet = JSON.parse(jsonMatches[0].replace(/```json\n|```/g, '')) as NovelDataSheet;
-            } catch(e) {
-                console.error("Failed to parse NovelDataSheet JSON:", e, jsonMatches[0]);
-                dataSheet = undefined;
-            }
+        const responseJson = response.text?.trim();
+        if (!responseJson) {
+            throw new Error('Received an empty response from the storyteller for analysis.');
         }
-        if (jsonMatches && jsonMatches.length > 1) {
-            try {
-                chapters = JSON.parse(jsonMatches[1].replace(/```json\n|```/g, '')) as Chapter[];
-            } catch (e) {
-                console.error("Failed to parse chapter JSON:", e, jsonMatches[1]);
-                chapters = [];
-            }
+
+        let parsedResponse: {
+            dataSheet: NovelDataSheet;
+            chapters: Chapter[];
+        };
+
+        try {
+            parsedResponse = JSON.parse(responseJson);
+        } catch (e) {
+            console.error("Failed to parse JSON from Gemini:", responseJson);
+            throw new Error(`The storyteller provided an invalid response format: ${e instanceof Error ? e.message : String(e)}`);
         }
+        
+        dataSheet = parsedResponse.dataSheet;
+        chapters = parsedResponse.chapters;
     }
 
-    if (!dataSheet) {
-        throw new Error("Failed to generate or retrieve a valid data sheet for the story.");
+
+    if (!dataSheet || !chapters) {
+        throw new Error("Failed to generate or retrieve the story framework.");
     }
     
-    if (chapters.length === 0 && !preloadedChapters) {
-        console.warn("Chapter generation resulted in an empty list.");
-    }
-
-
-    // Initialize the actual chat with the generated data sheet in the system instructions.
     const systemInstruction = getSystemInstruction(params.playerRole, params.playstyle, params.protagonistName, dataSheet);
+    
+    let gameplayPlanPrompt = '';
+    if (currentNovelTitle && chapters.length > 0) {
+        const plan = Portals.getChapterGameplayPlan(currentNovelTitle, chapters[0].title);
+        if (plan) {
+            gameplayPlanPrompt = serializeGameplayPlan(plan);
+        }
+    }
+
+    const storyStartPrompt = `Begin the story. The user has chosen to play as ${params.protagonistName || (params.playerRole === 'self' ? 'themselves, a new character' : 'the protagonist')}. The story is based on "${params.novelTitle}". Start with the first chapter: "${chapters[0].title}". Set the scene based on the novel's opening, incorporating the novel's specific notes if available: "${params.notes || 'No specific notes provided.'}" ${gameplayPlanPrompt}`;
+
+    const initialHistory: Content[] = [
+        { role: 'user', parts: [{ text: storyStartPrompt }] }
+    ];
+
     chat = ai.chats.create({
-        model: 'gemini-2.5-pro',
-        config: { systemInstruction },
+        model: 'gemini-2.5-flash',
+        config: {
+            systemInstruction
+        },
+        history: initialHistory,
     });
-
-    // Send the first message to the chat to generate the opening scene, using the stub content.
-    let storyStartPrompt = '';
-    if (params.novelContent) {
-        const gameplayNotes = params.notes ? `\n<gameplay_notes>\n${params.notes}\n</gameplay_notes>\n` : '';
-        storyStartPrompt = `Begin the interactive story.
-- Your narration must adopt the writing style and era defined in your story bible.
-- **Crucially, you must use the provided excerpt as the source material for the story's beginning.**
-- Rewrite the opening of the story from a second-person perspective, addressing me (the user) as 'you'.
-- Continue the story from where the excerpt leaves off.
-- End by prompting me for my first action.
-${gameplayNotes}
-Here is the excerpt to use:
-<excerpt>
-${params.novelContent}
-</excerpt>`;
-    } else {
-        storyStartPrompt = `Begin the interactive story titled "${params.novelTitle}".
-- Adhere strictly to the writing style, era, and world defined in your story bible.
-- Write the very first scene of the story to begin the interactive experience.
-- Place me directly into the world and end by prompting me for my first action.`;
-    }
-
-    const firstSceneResponse: GenerateContentResponse = await chat.sendMessage({ message: storyStartPrompt });
-    const firstSceneContent = firstSceneResponse.text;
-
-    if (!firstSceneContent) {
-        throw new Error("The storyteller failed to generate an opening scene.");
-    }
-
-    return { dataSheet, chapters, firstSceneContent, storyStartPrompt };
-}
-
-export async function sendMessage(message: string): Promise<{ text: string }> {
-    if (!chat) {
-        throw new Error("Chat not started. Please start a new story first.");
-    }
     
-    const response: GenerateContentResponse = await chat.sendMessage({ message });
-    return { text: response.text };
+    const firstSceneResponse = await chat.sendMessage({ message: "Start." });
+
+    return {
+        dataSheet,
+        chapters,
+        firstSceneContent: firstSceneResponse.text,
+        storyStartPrompt
+    };
 }
 
-export async function changeScene(sceneNumber: number, chapterTitle: string): Promise<{ text: string }> {
-     if (!chat) {
-        throw new Error("Chat not started. Please start a new story first.");
-    }
-
-    const prompt = `[SYSTEM: Transition the story to Chapter ${sceneNumber}: "${chapterTitle}". Narrate the events that lead to this new scene, or describe a time skip if appropriate. Then, write the opening of the new scene and prompt me for my next action.]`;
-    
-    const response: GenerateContentResponse = await chat.sendMessage({ message: prompt });
-    return { text: response.text };
-}
-
-export function recreateChat(history: StoryTurn[], playerRole: PlayerRole, playstyle: Playstyle, dataSheet: NovelDataSheet, protagonistName?: string) {
-    if (!ai) {
-        throw new Error("Gemini AI not initialized.");
-    }
+export function recreateChat(history: StoryTurn[], playerRole: PlayerRole, playstyle: Playstyle, dataSheet: NovelDataSheet, novelTitle: string, protagonistName?: string) {
+    currentNovelTitle = novelTitle;
     const systemInstruction = getSystemInstruction(playerRole, playstyle, protagonistName, dataSheet);
-    
-    const geminiHistory: Content[] = history.map(turn => ({
+    const typedHistory = history.map(turn => ({
         role: turn.role,
         parts: [{ text: turn.content }]
-    }));
+    })).filter(turn => !turn.parts[0].text.startsWith('**An unexpected error occurred:**'));
+    
+    chat = ai.chats.create({
+        model: 'gemini-2.5-flash',
+        config: {
+            systemInstruction,
+        },
+        history: typedHistory,
+    });
+}
 
-    if (geminiHistory.length > 0 && geminiHistory[0].role !== 'user') {
-        console.warn("Recreating chat with history that does not start with a user turn. This might lead to unexpected behavior.");
+export async function sendMessage(message: string): Promise<GenerateContentResponse> {
+    if (!chat) {
+        throw new Error('Chat not initialized');
+    }
+    return await chat.sendMessage({ message });
+}
+
+export async function changeScene(sceneNumber: number, chapterTitle: string): Promise<GenerateContentResponse> {
+     if (!chat) {
+        throw new Error('Chat not initialized');
     }
 
-    chat = ai.chats.create({
-        model: 'gemini-2.5-pro',
-        config: { systemInstruction },
-        history: geminiHistory
-    });
+    let gameplayPlanPrompt = '';
+    if (currentNovelTitle) {
+        const plan = Portals.getChapterGameplayPlan(currentNovelTitle, chapterTitle);
+        if (plan) {
+            gameplayPlanPrompt = serializeGameplayPlan(plan);
+        }
+    }
+
+    const sceneChangePrompt = `Transition the story to Chapter ${sceneNumber}: "${chapterTitle}". Summarize the transition and set the new scene for the user. ${gameplayPlanPrompt}`;
+    return await chat.sendMessage({ message: sceneChangePrompt });
 }

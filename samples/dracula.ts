@@ -2,9 +2,10 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
 */
-import { NovelDataSheet } from '../types';
+// Fix: Add explicit type annotation to fix type inference issue.
+import { NovelDataSheet, SampleNovelData } from '../types';
 
-export const dracula = {
+export const dracula: SampleNovelData = {
   path: './MasterTextFiles/DraculaMaster.txt',
   notes: `Novel-specific notes for Dracula can be added here.`,
   stub: `CHAPTER I. JONATHAN HARKER'S JOURNAL
@@ -24,4 +25,6 @@ export const dracula = {
     roadmap: [],
     custom_instances: [],
   } as NovelDataSheet,
+  source: 'pd',
+  genre: 'Gothic Horror',
 };

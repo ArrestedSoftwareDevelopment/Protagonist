@@ -2,9 +2,10 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
 */
-import { NovelDataSheet } from '../types';
+// Fix: Add explicit type annotation to fix type inference issue.
+import { NovelDataSheet, SampleNovelData } from '../types';
 
-export const tomsawyer = {
+export const tomsawyer: SampleNovelData = {
   path: './MasterTextFiles/TomSawyerMaster.txt',
   notes: `Novel-specific notes for The Adventures of Tom Sawyer can be added here.`,
   stub: `CHAPTER I.
@@ -34,4 +35,6 @@ The old lady pulled her spectacles down and looked over them about the room; the
     roadmap: [],
     custom_instances: [],
   } as NovelDataSheet,
+  source: 'pd',
+  genre: 'Adventure',
 };

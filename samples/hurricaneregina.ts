@@ -2,11 +2,13 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
 */
-import { NovelDataSheet } from '../types';
+// Fix: Add explicit type annotation to fix type inference issue.
+import { NovelDataSheet, SampleNovelData } from '../types';
 
-export const hurricaneregina = {
+export const hurricaneregina: SampleNovelData = {
   path: './MasterTextFiles/HurricaneReginaMaster.txt',
   notes: `Novel-specific notes for Hurricane Regina can be added here.`,
+  protagonists: ['Captain Dan Nolan', 'Regina Long'],
   stub: `Bon Voyage
 
 Chapter 1 - Overboard
@@ -25,4 +27,5 @@ Chapter 1 - Overboard
     roadmap: [],
     custom_instances: [],
   } as NovelDataSheet,
+  source: 'jzc',
 };

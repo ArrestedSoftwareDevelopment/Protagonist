@@ -2,9 +2,10 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
 */
-import { NovelDataSheet } from '../types';
+// Fix: Add explicit type annotation to fix type inference issue.
+import { NovelDataSheet, SampleNovelData } from '../types';
 
-export const huckfinn = {
+export const huckfinn: SampleNovelData = {
   path: './MasterTextFiles/HuckFinnMaster.txt',
   notes: `Novel-specific notes for Adventures of Huckleberry Finn can be added here.`,
   stub: `CHAPTER I.
@@ -22,4 +23,6 @@ YOU don't know about me without you have read a book by the name of The Adventur
     roadmap: [],
     custom_instances: [],
   } as NovelDataSheet,
+  source: 'pd',
+  genre: 'Adventure',
 };

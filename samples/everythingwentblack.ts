@@ -2,9 +2,10 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
 */
-import { NovelDataSheet } from '../types';
+// Fix: Add explicit type annotation to fix type inference issue.
+import { NovelDataSheet, SampleNovelData } from '../types';
 
-export const everythingwentblack = {
+export const everythingwentblack: SampleNovelData = {
   path: './MasterTextFiles/EverythingWentBlackMaster.txt',
   notes: `Novel-specific notes for Everything Went Black can be added here.`,
   stub: `Forward by Author Janice Livingston
@@ -24,4 +25,5 @@ Over time, the little notes we made for each other in the draft became such a pa
     roadmap: [],
     custom_instances: [],
   } as NovelDataSheet,
+  source: 'jzc',
 };

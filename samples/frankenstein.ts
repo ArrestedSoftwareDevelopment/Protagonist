@@ -2,9 +2,10 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
 */
-import { NovelDataSheet } from '../types';
+// Fix: Add explicit type annotation to fix type inference issue.
+import { NovelDataSheet, SampleNovelData } from '../types';
 
-export const frankenstein = {
+export const frankenstein: SampleNovelData = {
   path: './MasterTextFiles/FrankensteinMaster.txt',
   notes: `Novel-specific notes for Frankenstein can be added here.`,
   stub: `Letter 1
@@ -28,4 +29,6 @@ I am already far north of London, and as I walk in the streets of Petersburgh, I
     roadmap: [],
     custom_instances: [],
   } as NovelDataSheet,
+  source: 'pd',
+  genre: 'Gothic Horror',
 };

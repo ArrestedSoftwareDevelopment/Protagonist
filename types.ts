@@ -22,7 +22,7 @@ export type PlayerRole = 'protagonist' | 'self';
 export interface StartChatParams {
   novelTitle?: string;
   novelContent?: string;
-  novelPath?: string;
+  novelPaths?: string[];
   notes?: string;
   playstyle: Playstyle;
   playerRole: PlayerRole;
@@ -52,6 +52,8 @@ export interface PlotPoint {
   chapter: number | string;
   event: string;
   description: string;
+  // Fix: Add optional 'timeline' property to support non-linear narratives.
+  timeline?: 'present' | 'flashback';
 }
 
 export interface MoodStyleTone {
@@ -96,4 +98,25 @@ export interface Bookmark {
   dataSheet: NovelDataSheet;
   lastPlayed: string;
   protagonistName?: string;
+}
+
+// Fix: Moved SampleNovelData here to be shared across components and sample files.
+export interface SampleNovelData {
+    path: string;
+    notes: string;
+    stub: string;
+    datasheet: NovelDataSheet;
+    protagonists?: string[];
+    source: 'jzc' | 'pd';
+    genre?: string;
+}
+
+export interface GameplayBeat {
+  beat: number;
+  description: string;
+  objective: string;
+}
+
+export interface ChapterGameplayPlan {
+  beats: GameplayBeat[];
 }

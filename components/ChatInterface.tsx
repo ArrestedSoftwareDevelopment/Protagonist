@@ -48,6 +48,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     const [query, setQuery] = useState('');
     const [isBookmarked, setIsBookmarked] = useState(false);
     const storyEndRef = useRef<HTMLDivElement>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
     const isFirstScene = currentScene === 1;
     const isLastScene = currentScene === chapters.length;
 
@@ -79,6 +80,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         }
     };
 
+    const handleMouseEnter = () => {
+        if (!isLoading && inputRef.current) {
+            inputRef.current.focus();
+        }
+    };
+
     useEffect(() => {
         storyEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [history, isLoading]);
@@ -86,7 +93,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     const baseNavClass = "p-2 rounded-full text-gem-offwhite hover:bg-gem-slate disabled:text-gem-mist/50 disabled:bg-transparent disabled:cursor-not-allowed transition-colors";
 
     return (
-        <div className="flex flex-col h-screen relative font-serif">
+        <div className="flex flex-col h-screen relative font-serif" onMouseEnter={handleMouseEnter}>
             <header className="absolute top-0 left-0 right-0 p-4 bg-gem-onyx/80 backdrop-blur-sm z-10 flex justify-between items-center border-b border-gem-mist">
                 <div className="w-full max-w-4xl mx-auto flex justify-between items-center px-4">
                     <div className="flex items-center gap-2 flex-shrink-0">
@@ -170,6 +177,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                  <div className="max-w-4xl mx-auto">
                      <form onSubmit={handleSubmit} className="flex items-center space-x-3">
                         <input
+                            ref={inputRef}
                             type="text"
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}

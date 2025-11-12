@@ -2,9 +2,10 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
 */
-import { NovelDataSheet } from '../types';
+// Fix: Add explicit type annotation to fix type inference issue.
+import { NovelDataSheet, SampleNovelData } from '../types';
 
-export const radarlove = {
+export const radarlove: SampleNovelData = {
   path: './MasterTextFiles/RadarLoveMaster.txt',
   notes: `Novel-specific notes for Radar Love can be added here.`,
   protagonists: ['Chris Turner', 'Janique Turner', 'Tokio Jones'],
@@ -29,4 +30,5 @@ They were both in prison.`,
     roadmap: [],
     custom_instances: [],
   } as NovelDataSheet,
+  source: 'jzc',
 };

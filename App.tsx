@@ -66,12 +66,12 @@ const App: React.FC = () => {
         // Check for cached framework for both sample and custom-titled novels
         if (params.novelTitle) {
             const cachedFramework = cacheService.getStoryFramework(params.novelTitle);
-            if (cachedFramework && (params.novelPath || !params.novelContent)) {
+            if (cachedFramework && ((params.novelPaths && params.novelPaths.length > 0) || !params.novelContent)) {
                 setChapters(cachedFramework.chapters);
                 const initialHistory: StoryTurn[] = [{ role: 'model', content: cachedFramework.firstSceneContent }];
                 setStoryHistory(initialHistory);
                 setDataSheet(cachedFramework.dataSheet);
-                geminiService.recreateChat(initialHistory, params.playerRole, params.playstyle, cachedFramework.dataSheet, params.protagonistName);
+                geminiService.recreateChat(initialHistory, params.playerRole, params.playstyle, cachedFramework.dataSheet, params.novelTitle, params.protagonistName);
                 setCurrentScene(1);
                 setStatus(AppStatus.Story);
                 return;
@@ -82,22 +82,27 @@ const App: React.FC = () => {
         setIsQueryLoading(true);
 
         try {
-            let fullNovelContent: string | undefined = undefined;
+            let fullNovelContent: string = '';
             
-            if (params.novelPath) {
-                setProcessingMessage("The storyteller is fetching the novel...");
-                const response = await fetch(params.novelPath);
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch novel from ${params.novelPath}: ${response.statusText}`);
-                }
-                fullNovelContent = await response.text();
+            if (params.novelPaths && params.novelPaths.length > 0) {
+                setProcessingMessage(params.novelPaths.length > 1 ? "The storyteller is fetching the novels..." : "The storyteller is fetching the novel...");
+                const fetchPromises = params.novelPaths.map(path => 
+                    fetch(path).then(response => {
+                        if (!response.ok) {
+                            throw new Error(`Failed to fetch novel from ${path}: ${response.statusText}`);
+                        }
+                        return response.text();
+                    })
+                );
+                const contents = await Promise.all(fetchPromises);
+                fullNovelContent = contents.join('\n\n---\n\n');
             }
 
-            setProcessingMessage(params.novelContent || fullNovelContent ? "The storyteller is reading the novel..." : "The storyteller is preparing the scene...");
+            setProcessingMessage(params.novelContent || fullNovelContent ? "The storyteller is reading the novel(s)..." : "The storyteller is preparing the scene...");
 
             geminiService.initialize();
             
-            const { dataSheet, chapters, firstSceneContent, storyStartPrompt }: StartChatResponse = await geminiService.startChat(params, fullNovelContent);
+            const { dataSheet, chapters, firstSceneContent, storyStartPrompt }: StartChatResponse = await geminiService.startChat(params, fullNovelContent || undefined);
             
             setChapters(chapters);
             setDataSheet(dataSheet);
@@ -106,8 +111,8 @@ const App: React.FC = () => {
                 { role: 'model', content: firstSceneContent }
             ]);
             
-            // Cache the framework for sample novels or custom-titled novels
-            if (params.novelTitle && (params.novelPath || !params.novelContent)) {
+            // Cache the framework for sample novels, custom-titled novels, or mash-ups
+            if (params.novelTitle && ((params.novelPaths && params.novelPaths.length > 0) || !params.novelContent)) {
                 const newFramework: StoryFramework = {
                     chapters,
                     firstSceneContent,
@@ -213,7 +218,7 @@ const App: React.FC = () => {
         setPlaystyle(bookmark.playstyle);
         setDataSheet(bookmark.dataSheet);
         setProtagonistName(bookmark.protagonistName || '');
-        geminiService.recreateChat(bookmark.storyHistory, bookmark.playerRole, bookmark.playstyle, bookmark.dataSheet, bookmark.protagonistName);
+        geminiService.recreateChat(bookmark.storyHistory, bookmark.playerRole, bookmark.playstyle, bookmark.dataSheet, bookmark.novelTitle, bookmark.protagonistName);
         setStatus(AppStatus.Story);
     };
     

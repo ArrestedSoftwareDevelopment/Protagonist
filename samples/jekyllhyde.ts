@@ -2,9 +2,10 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
 */
-import { NovelDataSheet } from '../types';
+// Fix: Add explicit type annotation to fix type inference issue.
+import { NovelDataSheet, SampleNovelData } from '../types';
 
-export const jekyllhyde = {
+export const jekyllhyde: SampleNovelData = {
   path: './MasterTextFiles/JekyllAndHydeMaster.txt',
   notes: `Novel-specific notes for Strange Case of Dr Jekyll and Mr Hyde can be added here.`,
   stub: `This is a placeholder for Strange Case of Dr Jekyll and Mr Hyde.`,
@@ -20,4 +21,6 @@ export const jekyllhyde = {
     roadmap: [],
     custom_instances: [],
   } as NovelDataSheet,
+  source: 'pd',
+  genre: 'Gothic Horror',
 };

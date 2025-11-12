@@ -2,9 +2,10 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
 */
-import { NovelDataSheet } from '../types';
+// Fix: Add explicit type annotation to fix type inference issue.
+import { NovelDataSheet, SampleNovelData } from '../types';
 
-export const penultimatehustlejapan = {
+export const penultimatehustlejapan: SampleNovelData = {
   path: './MasterTextFiles/PenultimateHustleJapanMaster.txt',
   notes: `Novel-specific notes for Penultimate Hustle: Japan can be added here. Gameplay Note: The opening scene is set in the United States, California. Janique is in America before the story moves to Japan.`,
   protagonists: ['Chris Turner', 'Janique Turner'],
@@ -24,4 +25,5 @@ export const penultimatehustlejapan = {
     roadmap: [],
     custom_instances: [],
   } as NovelDataSheet,
+  source: 'jzc',
 };

@@ -2,9 +2,10 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
 */
-import { NovelDataSheet } from '../types';
+// Fix: Add explicit type annotation to fix type inference issue.
+import { NovelDataSheet, SampleNovelData } from '../types';
 
-export const callofthewild = {
+export const callofthewild: SampleNovelData = {
   path: './MasterTextFiles/CallOfTheWildMaster.txt',
   notes: `Novel-specific notes for The Call of the Wild can be added here.`,
   stub: `This is a placeholder for The Call of the Wild.`,
@@ -20,4 +21,6 @@ export const callofthewild = {
     roadmap: [],
     custom_instances: [],
   } as NovelDataSheet,
+  source: 'pd',
+  genre: 'Adventure',
 };
