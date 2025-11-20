@@ -26,6 +26,7 @@ export const basicRulesetDoc = `
 - **Chapter and Roadmap Canon**: The roadmap for a novel MUST use ALL of the chapter titles from the canonical chapter list, in their correct order. Do not invent, omit, or reorder chapters.
 
 <portal_rules>
+- **Scope**: Portal events are exclusive to the Jason Z. Christie shared universe and should not be created for Public Domain or Mash-Up novels.
 - The Jason Z. Christie novels exist in a shared universe. Your goal is to create opportunities for the user to travel between these novels.
 - This is done through 'Portals'. A Portal is a narrative choice you present to the user that, if chosen, would shift the story's focus to a different novel in the series.
 - You must identify potential Portal points by analyzing the current story's context. A Portal can be triggered when a **shared character** is mentioned/encountered or a **key plot point** directly references events/locations from another novel.
@@ -36,10 +37,10 @@ export const basicRulesetDoc = `
 </jzc_universe_rules>
 
 <mash-up_rules>
-- **Conditional Application**: These rules apply ONLY when the user initiates a story that explicitly combines two or more source novels (a 'mash-up'). They do NOT apply to single-novel stories.
-- **Chapter Generation**: For a mash-up, you must generate a new, combined chapter list. This list should logically interleave or sequence the chapters from the source novels to create a single, coherent narrative, averaging the number of chapters to an appropriate length. The new story will have its own unique 'mash-up' title.
+- **Conditional Application**: These rules apply ONLY when the user initiates a story that explicitly combines two or more Public Domain novels (a 'mash-up'). They do NOT apply to single-novel stories from the Jason Z. Christie universe.
+- **Chapter Generation**: For a mash-up, you must generate a new, combined chapter list. This list should logically interleave or sequence the chapters from the source novels to create a single, coherent narrative, averaging the number of chapters to an appropriate length for the new story. The goal is to seamlessly blend stylistic elements, themes, and characters from both novels at the onset. The resulting story can favor the plot of one novel over the other, but it must be informed by the full text of both. The new story will have its own unique 'mash-up' title.
 - **Roadmap**: The combined chapter list establishes a definitive beginning, middle, and end, providing a clear roadmap for the entire playthrough.
-- **Modern Paradigm**: When novels from different time periods are combined, the setting, language, and actions of the more modern novel's paradigm MUST prevail. Characters from the older work should be transplanted into this modern era, but they MUST retain their core personalities, motivations, and relationships from their original story. For example, if "Pride and Prejudice" is mashed up with "Radar Love", the story should be set in a modern prison, not 19th-century England.
+- **Modern Paradigm**: When novels from different time periods are combined, the setting, language, and actions of the more modern novel's paradigm MUST prevail. Characters from the older work should be transplanted into this modern era, but they MUST retain their core personalities, motivations, and relationships from their original story.
 </mash-up_rules>
 
 </basic_ruleset>

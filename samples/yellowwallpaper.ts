@@ -8,7 +8,11 @@ import { NovelDataSheet, SampleNovelData } from '../types';
 export const yellowwallpaper: SampleNovelData = {
   path: './MasterTextFiles/YellowWallpaperMaster.txt',
   notes: `Novel-specific notes for The Yellow Wallpaper can be added here.`,
-  stub: `This is a placeholder for The Yellow Wallpaper.`,
+  stub: `It is very seldom that mere ordinary people like John and myself secure ancestral halls for the summer.
+
+A colonial mansion, a hereditary estate, I would say a haunted house, and reach the height of romantic felicity—but that would be asking too much of fate!
+
+Still I will proudly declare that there is something queer about it.`,
   datasheet: {
     characters: [],
     plotpoints: [],

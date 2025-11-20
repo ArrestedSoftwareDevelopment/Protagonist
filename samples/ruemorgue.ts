@@ -8,7 +8,7 @@ import { NovelDataSheet, SampleNovelData } from '../types';
 export const ruemorgue: SampleNovelData = {
   path: './MasterTextFiles/RueMorgueMaster.txt',
   notes: `Novel-specific notes for The Murders in the Rue Morgue can be added here.`,
-  stub: `This is a placeholder for The Murders in the Rue Morgue.`,
+  stub: `The mental features discoursed of as the analytical, are, in themselves, but little susceptible of analysis. We appreciate them only in their effects. We know of them, among other things, that they are always to their possessor, when inordinately possessed, a source of the liveliest enjoyment. As the strong man exults in his physical ability, delighting in such exercises as call his muscles into action, so glories the analyst in that moral activity which disentangles.`,
   datasheet: {
     characters: [],
     plotpoints: [],

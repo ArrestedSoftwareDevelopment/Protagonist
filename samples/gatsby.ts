@@ -8,7 +8,9 @@ import { NovelDataSheet, SampleNovelData } from '../types';
 export const gatsby: SampleNovelData = {
   path: './MasterTextFiles/GatsbyMaster.txt',
   notes: `Novel-specific notes for The Great Gatsby can be added here.`,
-  stub: `This is a placeholder for The Great Gatsby.`,
+  stub: `In my younger and more vulnerable years my father gave me some advice that I’ve been turning over in my mind ever since.
+
+“Whenever you feel like criticizing any one,” he told me, “just remember that all the people in this world haven’t had the advantages that you’ve had.”`,
   datasheet: {
     characters: [],
     plotpoints: [],

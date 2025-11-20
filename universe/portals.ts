@@ -26,15 +26,20 @@ import {
 import { jzcCharacters } from './characters';
 import { jzcRoadmaps } from './roadmaps';
 import { jasonZChristieUniverseDoc } from './jason-z-christie';
-import { NovelDataSheet, Chapter, ChapterGameplayPlan } from '../types';
+import { NovelDataSheet, Chapter, ChapterGameplayPlan, CharacterProfile, RoadmapStep } from '../types';
 import { jzcGameplayPlans } from './gameplay';
+
+// Import Public Domain Data
+import { aliceDatasheet } from './pd_datasheets';
+import { aliceChapters } from './pd_chapters';
+import { pdCharacters } from './pd_characters';
+import { pdRoadmaps } from './pd_roadmaps';
 
 
 /**
  * The Portals class serves as the central logic hub for managing the
- * Jason Z. Christie shared literary universe. It provides access to
- * canonical datasheets and chapter lists for each novel by assembling
- * data from various specialized source files.
+ * canonical data for all pre-analyzed novels, including both the
+ * Jason Z. Christie shared literary universe and Public Domain works.
  */
 export class Portals {
     private static universeDataSheets: Record<string, Partial<NovelDataSheet>> = {
@@ -46,6 +51,7 @@ export class Portals {
         'Penultimate Hustle: Japan': penultimateHustleJapanDatasheet,
         'Zombie Killa': zombieKillaDatasheet,
         'Cure for Sanity': cureForSanityDatasheet,
+        "Alice's Adventures in Wonderland": aliceDatasheet,
     };
 
     private static universeChapters: Record<string, Chapter[]> = {
@@ -57,6 +63,17 @@ export class Portals {
         'Penultimate Hustle: Japan': penultimateHustleJapanChapters,
         'Zombie Killa': zombieKillaChapters,
         'Cure for Sanity': cureForSanityChapters,
+        "Alice's Adventures in Wonderland": aliceChapters,
+    };
+
+    private static allCharacters: Record<string, CharacterProfile[]> = {
+        ...jzcCharacters,
+        ...pdCharacters,
+    };
+
+    private static allRoadmaps: Record<string, RoadmapStep[]> = {
+        ...jzcRoadmaps,
+        ...pdRoadmaps,
     };
 
     /**
@@ -66,8 +83,8 @@ export class Portals {
      */
     public static getNovelDataSheet(title: string): NovelDataSheet | undefined {
         const baseSheet = this.universeDataSheets[title];
-        const characters = jzcCharacters[title];
-        const roadmap = jzcRoadmaps[title];
+        const characters = this.allCharacters[title];
+        const roadmap = this.allRoadmaps[title];
 
         if (!baseSheet || !characters || !roadmap) {
             return undefined;
